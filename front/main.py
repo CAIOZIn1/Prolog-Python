@@ -1,10 +1,20 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QComboBox, QPushButton, QTextEdit
+
+from PyQt5.QtWidgets import (QApplication, QComboBox, QLabel, QPushButton,
+                             QTextEdit, QVBoxLayout, QWidget)
+from pyswip import Prolog
+
 
 class RecommenderApp(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.prolog = Prolog()
+        try:
+            self.prolog.consult("../back/db.pl")
+        except Exception as e:
+            print(f"Erro ao carregar o arquivo Prolog: {e}")
+            sys.exit(1)
         self.initUI()
 
     def initUI(self):
@@ -32,21 +42,15 @@ class RecommenderApp(QWidget):
         self.show()
 
     def get_recommendations(self):
-        preference = self.pref_combobox.currentText()
+        preference = self.pref_combobox.currentText().lower()
         recommendations = self.query_prolog(preference)
         self.result_text.setText("\n".join(recommendations))
 
     def query_prolog(self, preference):
-        if preference == "Backend":
-            return ["Python", "Java", "Node.js"]
-        elif preference == "Frontend":
-            return ["JavaScript", "React", "Angular"]
-        elif preference == "Mobile":
-            return ["Flutter", "React Native", "Swift"]
-        elif preference == "Data Science":
-            return ["Python", "R", "Julia"]
-        else:
-            return []
+        query = f"recommend({preference}, Tech)"
+        results = list(self.prolog.query(query))
+        recommendations = [result['Tech'] for result in results]
+        return recommendations
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
